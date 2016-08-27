@@ -40,3 +40,6 @@ def process_line(line, batchSize):
 
 
 read_text()
+
+#http://isithackday.com/arrpi.php?text=friend
+#Could use this link to build a pirate speech translator?
