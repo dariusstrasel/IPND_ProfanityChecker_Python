@@ -3,43 +3,77 @@
 # Todo: pass output in a more meaningful way
 
 import urllib.request
+import sys
 
-def read_text():
-    """This function opens a specified file, saves its contents to memory, and begins processing according to batch
-    size."""
-    document = open('C:/users/siruk/desktop/movie_quotes.txt', "r")
-    contents_of_file = document.read()
-    document.close()
-    process_line(contents_of_file, 2)
+class ProfanityFilter:
+    def __init__(self):
+        self.profanities = []
+        file_contents = None
+        file_args = sys.argv[1:]
 
+        if len(file_args) > 0:
+            try:
+                with open(file_args[0]) as f:
+                    file_contents = f.read()
+            except:
+                print("Unable to open source document")
 
-def openConnection(string):
-    """This function opens a connection to the profanity server using the input as the value to query."""
-    connection = urllib.request.urlopen("http://www.wdylike.appspot.com/?q=" + string)
-    output = connection.read()
-    print(output)
-    connection.close
+            self.process_line(file_contents, 1)
+        else:
+            self.usage_information()
 
+    def usage_information(self):
+        print('Usage: Python init.py "file_argument"')
 
-def process_line(line, batchSize):
-    """This function will parse an input string and send values to the profanity checked based on the batched size."""
-    newLine = line.split()
-    pointer = 0
-    indexEnd = 0
-    indexStart = 0
-    for i in range(0, len(newLine)):
-        indexEnd = indexEnd + 1
-        pointer = pointer + 1
-        if pointer == batchSize:
-            #print(newLine[indexStart:indexEnd])
-            openConnection("%20".join(newLine[indexStart:indexEnd]))
-            indexStart = indexStart + pointer
-            pointer = 0
-    if indexEnd - indexStart < batchSize:
-        openConnection("%20".join(newLine[indexStart:len(newLine)]))
+    def process_line(self, line, batch_size):
+        """This function will parse an input string and send values to the profanity checked based on the batched size."""
 
+        new_line = line.split()
+        pointer = 1
+        index_end = 1
+        index_start = 0
 
-read_text()
+        for _ in range(0, len(new_line)):
+            if pointer == batch_size:
+                result = self.open_connection("%20".join(new_line[index_start:index_end]))
+                self.profanities.append(result)
+                index_start += pointer
+                pointer = 0
+
+            index_end += 1
+            pointer += 1
+
+        if index_end - index_start < batch_size:
+            self.open_connection("%20".join(new_line[index_start:len(new_line)]))
+
+    def open_connection(self, string_to_check):
+        """Open connection to RestAPI and query string input."""
+        try:
+            connection = urllib.request.urlopen("http://www.wdylike.appspot.com/?q={0}".format(string_to_check))
+            output = connection.read()
+
+        except:
+            print("Unable to connect to URL to check string")
+            return
+
+        finally:
+            connection.close
+
+        return (output.decode() == "true")
+
+    def count_profanities(self):
+        """Count all word instances which are profanities"""
+        return self.profanities.count(True)
+
+    def count_non_profanities(self):
+        """Count all word instances which are not profanities"""
+        return self.profanities.count(False)
+
+p = ProfanityFilter()
+
+print(p.count_profanities())
+print(p.count_non_profanities())
 
 #http://isithackday.com/arrpi.php?text=friend
+
 #Could use this link to build a pirate speech translator?
